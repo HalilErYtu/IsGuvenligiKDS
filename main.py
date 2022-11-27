@@ -8,14 +8,14 @@ from typing import List
 import urllib
 import os
 
-host_server = os.environ.get('host_server', 'localhost')
+"""host_server = os.environ.get('host_server', 'localhost')
 db_server_port = urllib.parse.quote_plus(
     str(os.environ.get('db_server_port', '5432')))
 database_name = os.environ.get('database_name', 'isguvenligikds')
 db_username = urllib.parse.quote_plus(
     str(os.environ.get('db_username', 'isguvenligikds')))
 db_password = urllib.parse.quote_plus(
-    str(os.environ.get('db_password', 'halil_012')))
+    str(os.environ.get('db_password', 'halil_012')))"""
 DATABASE_URL = 'postgresql://isguvenligikds:halil_012@isguvenligikds.postgres.database.azure.com/isguvenligikds?sslmode=require'
 
 
