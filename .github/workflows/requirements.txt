@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-gunicorn
-jinja2
-python-multipart
-sqlalchemy
-pydantic
-typing
-urllib
