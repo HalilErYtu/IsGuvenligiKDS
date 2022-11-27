@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'isgüvenligikds'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC56A778CAFC4BE2A2B892A93CBB7226 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_EDB92B9CE3664506A79B43DB9B3D6DC2 }}
