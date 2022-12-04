@@ -149,7 +149,7 @@ async def Create_algdata(algorithm_type: int, file: UploadFile = File(...)):
 
 @app.get("/get_all_datas/")
 def Create_algdata():
-    query = sqlalchemy.select(alg_datas).order_by(alg_datas.id.desc())
+    query = sqlalchemy.select(alg_datas)
     print((query))
     with engine.connect() as session:
         for row in session.execute(query):
