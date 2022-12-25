@@ -12,6 +12,8 @@ from azure.storage.blob.aio import BlobServiceClient
 from azure.storage.blob import ContainerClient
 import algorithms.pyprefixspan as prefixspanalgorithm
 from prefixspan import PrefixSpan
+import algorithms.clofast as cs
+import algorithms.pfpm as pfpm
 #import algorithms.prefixspanspark as prefixspanalgorithmspark
 
 """host_server = os.environ.get('host_server', 'localhost')
@@ -163,7 +165,7 @@ async def Create_algdata(data_id: int):
     return f
 
 
-@app.get("/prefixspan/")
+@app.get("/prefixspan_agp/")
 async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int):
     # return prefixspanalgorithmspark.SparkPrefixSpan(5,5,5)
     d = session.query(alg_datas).filter_by(id=data_id).first()
@@ -186,3 +188,30 @@ async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int):
     print(ps.frequent(2, generator=True))
     print(ps.topk(5, generator=True))
     return ps.frequent(minsup)
+
+
+@app.get("/clofast/")
+async def ClofastAPI(data_id: int, minsup: float):
+    d = session.query(alg_datas).filter_by(id=data_id).first()
+    s = await download_blob(d.file_name)
+    data = cs.prepare_clofast_data(s)
+    cf = cs.Clofast(data, minsup)
+    cf.setminsup((minsup))
+    cf.frequent_item_set_mining()
+    return cf.get_result()
+
+
+@app.get("/pfpm/")
+async def PfpmAPI(data_id: int, minsup: float, maxPer: float):
+    d = session.query(alg_datas).filter_by(id=data_id).first()
+    s = await download_blob(d.file_name)
+    s = s.replace('\t', '')
+    s = s.replace('\n', '')
+    ap = pfpm.PFPMC(s, minsup, maxPer, sep=' ')
+    ap.startMine()
+    print("Total number of Periodic-Frequent Patterns:", len(ap.getPatterns()))
+    # _ap.save(_ab._sys.argv[2])
+    print("Total Memory in USS:", ap.getMemoryUSS())
+    print("Total Memory in RSS", ap.getMemoryRSS())
+    print("Total ExecutionTime in ms:", ap.getRuntime())
+    return ap.getPatterns()
