@@ -396,6 +396,10 @@ class PFPMC(_ab._periodicFrequentPatterns):
                 data, columns=['Patterns', 'Support', 'Periodicity'])
         return dataframe
 
+    def getPatternsAsString(self):
+        for a, b in self._finalPatterns.items():
+            yield str(a) + "  :  " + str(b[0]) + " - " + str(b[1])
+
     def save(self, outFile):
         """Complete set of periodic-frequent patterns will be loaded in to a output file
 

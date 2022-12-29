@@ -167,7 +167,6 @@ async def Create_algdata(data_id: int):
 
 @app.get("/prefixspan_agp/")
 async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int):
-    # return prefixspanalgorithmspark.SparkPrefixSpan(5,5,5)
     d = session.query(alg_datas).filter_by(id=data_id).first()
     s = await download_blob(d.file_name)
     s = s.strip()
@@ -183,11 +182,10 @@ async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int):
     #p = prefixspanalgorithm.pyprefixspan(data, minsup, length)
     # p.run()
     ps = PrefixSpan(d2)
-    print(ps.frequent(minsup))
-    print(ps.topk(5))
-    print(ps.frequent(2, generator=True))
-    print(ps.topk(5, generator=True))
-    return ps.frequent(minsup)
+    if (minsup < 1):
+        min_sup = int(len(d2) * minsup)
+    result = ps.frequent(minsup)
+    return (str(e[1]) + ' : ' + str(e[0]) for e in result)
 
 
 @app.get("/clofast/")
@@ -198,7 +196,8 @@ async def ClofastAPI(data_id: int, minsup: float):
     cf = cs.Clofast(data, minsup)
     cf.setminsup((minsup))
     cf.frequent_item_set_mining()
-    return cf.get_result()
+    result = cf.get_result()
+    return result
 
 
 @app.get("/pfpm/")
@@ -214,4 +213,4 @@ async def PfpmAPI(data_id: int, minsup: float, maxPer: float):
     print("Total Memory in USS:", ap.getMemoryUSS())
     print("Total Memory in RSS", ap.getMemoryRSS())
     print("Total ExecutionTime in ms:", ap.getRuntime())
-    return ap.getPatterns()
+    return ap.getPatternsAsString()
