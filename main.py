@@ -14,7 +14,7 @@ import algorithms.pyprefixspan as prefixspanalgorithm
 from prefixspan import PrefixSpan
 import algorithms.clofast as cs
 import algorithms.pfpm as pfpm
-#import algorithms.prefixspanspark as prefixspanalgorithmspark
+import time
 
 """host_server = os.environ.get('host_server', 'localhost')
 db_server_port = urllib.parse.quote_plus(
@@ -24,6 +24,8 @@ db_username = urllib.parse.quote_plus(
     str(os.environ.get('db_username', 'isguvenligikds')))
 db_password = urllib.parse.quote_plus(
     str(os.environ.get('db_password', 'halil_012')))"""
+
+"""SQL bağlantısı için gerekli url değişkeni"""
 DATABASE_URL = 'postgresql://isguvenligikds:halil_012@isguvenligikds.postgres.database.azure.com/isguvenligikds?sslmode=require'
 
 
@@ -47,6 +49,13 @@ algs = sqlalchemy.Table(
     sqlalchemy.Column("created_on", sqlalchemy.String)
 )
 
+codes = sqlalchemy.Table(
+    'kazakodları',
+    metadata,
+    sqlalchemy.Column("code", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("accident", sqlalchemy.String)
+)
+
 engine = sqlalchemy.create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -67,7 +76,7 @@ class AlgorithmData(BaseModel):
     file_name: str
     data_file: UploadFile"""
 
-
+"""Api bağlantısı sağlamak için FastApi Framework'ü kullanıldı"""
 app = FastAPI(title="İş güvenliği için karar destek sistemi")
 app.add_middleware(
     CORSMiddleware,
@@ -78,6 +87,21 @@ app.add_middleware(
 )
 
 database = databases.Database(DATABASE_URL)
+
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
+
+"""
+Verilerin bulut üzerinde tutulması için Azure Blob Service kullanıldı. Bu servis bir verinin depolanmasını ve çağrılmasını sağlamakta.
+Bu API verinin yüklenmesi için kullanılıyor.
+"""
 
 
 async def uploadtoazure(file: UploadFile, file_name: str):
@@ -96,6 +120,10 @@ async def uploadtoazure(file: UploadFile, file_name: str):
             return HTTPException(401, "Something went terribly wrong..")
     return
 
+""".
+Bu API Blob Service'e yüklenmiş bir verinin indirilmesi için kullanılıyor.
+"""
+
 
 async def download_blob(filename: str):
     connect_str = "DefaultEndpointsProtocol=https;AccountName=ytukdsprojectdata;AccountKey=E/5tHAZVSYzzvkvIHa4IInz+38dMKJulcNFj9eeIHN9G1XI9MN3eZxam4lwlkgU1OI7j+hxAEqXK+AStPQj36Q==;EndpointSuffix=core.windows.net"
@@ -109,25 +137,11 @@ async def download_blob(filename: str):
     blob_data = await blob_client_instance.download_blob()
     my_str = await blob_data.content_as_text()
     return my_str
-    """connect_str = "DefaultEndpointsProtocol=https;AccountName=ytukdsprojectdata;AccountKey=E/5tHAZVSYzzvkvIHa4IInz+38dMKJulcNFj9eeIHN9G1XI9MN3eZxam4lwlkgU1OI7j+hxAEqXK+AStPQj36Q==;EndpointSuffix=core.windows.net"
-    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-    try:
-        blob_client = blob_service_client.get_blob_client(
-            container="algorithmdatas", blob=filename)
-        f = await blob_client.download_blob()
-        return f.readall()
-    except Exception as e:
-        print(e.message)"""
 
-
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+"""
+Bu API aracılığı ile kullanılcak bir veri ilgili tabloya kaydediliyor.
+Verinin hangi algoritma ile kullanılacağı, hangi tarihte yüklendiği kaydediliyor.
+"""
 
 
 @app.post("/add_algorithm_data/")
@@ -148,6 +162,10 @@ async def Create_algdata(algorithm_type: int, file: UploadFile = File(...)):
     print(last_record_id)
     return
 
+"""
+Yüklenmiş bütün verileri çağıran API
+"""
+
 
 @app.get("/get_all_datas/")
 def Create_algdata():
@@ -158,15 +176,27 @@ def Create_algdata():
             yield row
 
 
+"""
+Girilen id'nin verisini getiryor
+"""
+
+
 @app.get("/get_data/")
 async def Create_algdata(data_id: int):
     d = session.query(alg_datas).filter_by(id=data_id).first()
     f = await download_blob(d.file_name)
     return f
 
+"""
+Prefixspan_agp algoritmasını çalıştıran API
+data_id: çalışacak verinin id'si
+minsup: Algoritma için belirlenen minimum support değeri
+length: Algoritma için belirlenen length değeri
+"""
+
 
 @app.get("/prefixspan_agp/")
-async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int):
+async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int = 1):
     d = session.query(alg_datas).filter_by(id=data_id).first()
     s = await download_blob(d.file_name)
     s = s.strip()
@@ -178,14 +208,17 @@ async def PrefixspanAlgorithmAPI(data_id: int, minsup: float, length: int):
     d2 = []
     for i in d1:
         d2.append(i.split(' '))
-    #print(len(data), data[len(data) - 1])
-    #p = prefixspanalgorithm.pyprefixspan(data, minsup, length)
-    # p.run()
     ps = PrefixSpan(d2)
     if (minsup < 1):
         min_sup = int(len(d2) * minsup)
     result = ps.frequent(minsup)
     return (str(e[1]) + ' : ' + str(e[0]) for e in result)
+
+"""
+Clofast algoritmasını çalıştıran API
+data_id: çalışacak verinin id'si
+minsup: Algoritma için belirlenen minimum support değeri
+"""
 
 
 @app.get("/clofast/")
@@ -199,18 +232,42 @@ async def ClofastAPI(data_id: int, minsup: float):
     result = cf.get_result()
     return result
 
+"""
+PFPM algoritmasını çalıştıran API
+data_id: çalışacak verinin id'si
+minsup: Algoritma için belirlenen minimum support değeri
+length: Algoritma için belirlenen maximum perception değeri
+"""
+
 
 @app.get("/pfpm/")
-async def PfpmAPI(data_id: int, minsup: float, maxPer: float):
+async def PfpmAPI(data_id: int, minsup: float, maxPer: float = 800):
     d = session.query(alg_datas).filter_by(id=data_id).first()
-    s = await download_blob(d.file_name)
-    s = s.replace('\t', '')
-    s = s.replace('\n', '')
+    raw_data = await download_blob(d.file_name)
+    s = pfpm.prepare_pfpm_data(raw_data)
     ap = pfpm.PFPMC(s, minsup, maxPer, sep=' ')
     ap.startMine()
-    print("Total number of Periodic-Frequent Patterns:", len(ap.getPatterns()))
-    # _ap.save(_ab._sys.argv[2])
-    print("Total Memory in USS:", ap.getMemoryUSS())
-    print("Total Memory in RSS", ap.getMemoryRSS())
-    print("Total ExecutionTime in ms:", ap.getRuntime())
     return ap.getPatternsAsString()
+
+"""
+Verilen data için optimum bir minimum support değeri belirleyen API
+Minimum support değerini adım adım küçülterek izin verilen süreye kadar algoritmayı çalıştırmaktadır.
+"""
+
+
+@app.get("/getOptimumMinSup")
+async def GetMinSup(data_id: int, algorithm_type: int, maxSecond: int = 120):
+    t = 0
+    minsup = 0.9
+    while (maxSecond > t):
+        st = time.time()
+        match algorithm_type:
+            case 0:
+                PrefixspanAlgorithmAPI(data_id, minsup)
+            case 1:
+                ClofastAPI(data_id, minsup)
+            case 2:
+                PfpmAPI(data_id, minsup)
+        et = time.time()
+        t = et - st
+        minsup *= 0.9

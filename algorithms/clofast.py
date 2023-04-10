@@ -1,6 +1,5 @@
 from pymining import itemmining
 
-
 class Clofast:
 
     def __init__(self, transactions, min_sup=2,):
@@ -8,7 +7,9 @@ class Clofast:
         self.seq = transactions
         self.out = {}
 
-    def setminsup(self, minsup=2):
+    def setminsup(self, minsup=2, default_minsup = False):
+        if default_minsup:
+            minsup = 0.015 # denenmiş değerlere göre belirlendi. 
         if (minsup < 1):
             self.min_sup = int(len(self.seq) * minsup)
         else:

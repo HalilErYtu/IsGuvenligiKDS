@@ -1,17 +1,17 @@
 #  Copyright (C)  2021 Rage Uday Kiran
-#
-#      This program is free software: you can redistribute it and/or modify
-#      it under the terms of the GNU General Public License as published by
-#      the Free Software Foundation, either version 3 of the License, or
-#      (at your option) any later version.
-#
-#      This program is distributed in the hope that it will be useful,
-#      but WITHOUT ANY WARRANTY; without even the implied warranty of
-#      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#      GNU General Public License for more details.
-#
-#      You should have received a copy of the GNU General Public License
-#      along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from itertools import groupby as _groupby
 from operator import itemgetter as _itemgetter
@@ -421,19 +421,7 @@ class PFPMC(_ab._periodicFrequentPatterns):
         return self._finalPatterns
 
 
-"""if __name__ == "__main__":
-    _ap = str()
-    if len(_ab._sys.argv) == 5 or len(_ab._sys.argv) == 6:
-        if len(_ab._sys.argv) == 6:
-            _ap = PFPMC(_ab._sys.argv[1], _ab._sys.argv[3], _ab._sys.argv[4], _ab._sys.argv[5])
-        if len(_ab._sys.argv) == 5:
-            _ap = PFPMC(_ab._sys.argv[1], _ab._sys.argv[3], _ab._sys.argv[4])
-        _ap.startMine()
-        print("Total number of Periodic-Frequent Patterns:", len(_ap.getPatterns()))
-        # _ap.save(_ab._sys.argv[2])
-        print("Total Memory in USS:", _ap.getMemoryUSS())
-        print("Total Memory in RSS", _ap.getMemoryRSS())
-        print("Total ExecutionTime in ms:", _ap.getRuntime())
-    else:
-        print("Error! The number of input parameters do not match the total number of parameters provided")
-"""
+def prepare_pfpm_data(raw_data:str):
+    s = raw_data.replace('\t', '')
+    s = s.replace('\n', '')
+    return s
